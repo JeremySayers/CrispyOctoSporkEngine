@@ -6,7 +6,7 @@
 #include <emscripten/html5.h>
 #endif
 
-#include "game.h"
+#include "../include/game.h"
 
 void Game::Init(std::string windowTitle, int width, int height)
 {

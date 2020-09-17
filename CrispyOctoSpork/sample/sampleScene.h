@@ -1,6 +1,6 @@
 #pragma once
-#include "scene.h"
-#include "entity.h"
+#include "../include/scene.h"
+#include "../include/entity.h"
 #include <vector>
 
 class SampleScene : public Scene

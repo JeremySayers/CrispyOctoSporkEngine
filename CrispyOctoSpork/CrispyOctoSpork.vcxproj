@@ -19,15 +19,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="game.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="sampleScene.cpp" />
+    <ClCompile Include="src\game.cpp" />
+    <ClCompile Include="sample\main.cpp" />
+    <ClCompile Include="sample\sampleScene.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="entity.h" />
-    <ClInclude Include="game.h" />
-    <ClInclude Include="sampleScene.h" />
-    <ClInclude Include="scene.h" />
+    <ClInclude Include="include\entity.h" />
+    <ClInclude Include="include\game.h" />
+    <ClInclude Include="sample\sampleScene.h" />
+    <ClInclude Include="include\scene.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
