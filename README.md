@@ -8,8 +8,7 @@ To use with VS 2019, you'll need to download the `crispyOctoSporkEngine.h` heade
 Then you'll need `SDL2` and `SDL2_image` added as includes and linked against.
 
 There is a `sampleGame.cpp` above that will get you started. But at a minimum you'll need to create a class deriving from `Engine` and override `OnCreate()` and `OnUpdate` like below:
-
-```
+```c++
 class SampleGame : public Engine
 {
 public:
@@ -26,7 +25,7 @@ public:
 ```
 
 Then your main method would look like:
-```
+```c++
 int main(int argc, char* argv[])
 {
 	SampleGame game;
@@ -37,6 +36,20 @@ int main(int argc, char* argv[])
 	}
 
 	return 0;
+}
+```
+
+Currently a very lightweight Entity system is in place where you can create a `Sprite`, `Rectangle`, or `Circle`. These can be added to the engine with a call like:
+```c++
+AddEntity(new Rectangle(0, 0, 32, 32, COLOR_GREEN, renderer));
+```
+
+The above mentioned Entity types all have a default `OnRender` that will be called in the engines base implementation `OnUpdate()` so you'll need to add a call to your overriden `OnUpdate()` in order to get the free renderering like:
+```c++
+bool OnUpdate(float deltaTime) override
+{
+	Engine::OnUpdate(deltaTime);
+	return true;
 }
 ```
 
