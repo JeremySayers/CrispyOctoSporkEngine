@@ -18,12 +18,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="crispyOctoSporkEngine.h">
+    <ClInclude Include="..\crispyOctoSporkEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="sampleGame.cpp">
+    <ClCompile Include="..\sampleGame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

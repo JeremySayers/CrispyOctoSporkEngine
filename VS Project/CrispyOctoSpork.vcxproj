@@ -19,10 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="crispyOctoSporkEngine.h" />
+    <ClInclude Include="..\crispyOctoSporkEngine.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="sampleGame.cpp" />
+    <ClCompile Include="..\sampleGame.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
