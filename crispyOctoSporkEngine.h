@@ -77,11 +77,13 @@ namespace CrispyOctoSpork
 		/// <summary>
 		/// The main update function that is called once per frame in the engine.
 		/// </summary>
-		void Update(void* arg);
+		static void Update(void* arg);
 	};
 
 	Engine::Engine()
 	{
+		SDL_Init(SDL_INIT_VIDEO);
+
 		window = NULL;
 		renderer = NULL;
 		int screenWidth = 0;
@@ -153,6 +155,8 @@ namespace CrispyOctoSpork
 			std::cout << "Failed to create renderer: " << IMG_GetError() << std::endl;
 			return false;
 		}
+
+		return true;
 	}
 
 	/// <summary>
@@ -177,7 +181,7 @@ namespace CrispyOctoSpork
 
 	void Engine::Update(void* arg)
 	{
-		class Engine* engine = (class Engine*)arg;
+		Engine* engine = (Engine*)arg;
 
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
