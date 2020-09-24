@@ -13,6 +13,53 @@
 namespace CrispyOctoSpork
 {
 	/// <summary>
+	/// Base class for objects that should be updated and rendered.
+	/// </summary>
+	class Entity
+	{
+	public:
+		/// <summary>
+		/// Default constructor.
+		/// </summary>
+		Entity();
+
+		/// <summary>
+		/// Constructs a new instance of <see cref="Entity"/>.
+		/// </summary>
+		/// <param name="x">The x location of the entity in the engine.</param>
+		/// <param name="y">The y location of the entity in the engine.</param>
+		Entity(float x, float y);
+
+		/// <summary>
+		/// Default deconstructor.
+		/// </summary>
+		~Entity();
+
+		/// <summary>
+		/// Called once a frame to be overridden by derived classes.
+		/// </summary>
+		/// <param name="deltaTime">The delta time since the last frame.</param>
+		/// <returns>Returns a boolean.</returns>
+		virtual bool OnUpdate(float deltaTime);
+
+		/// <summary>
+		/// Called once a frame to be overridden by derived classes.
+		/// </summary>
+		/// <param name="deltaTime">The delta time since the last frame.</param>
+		/// <returns>Returns a boolean.</returns>
+		virtual bool OnRender(float deltaTime);
+
+	protected:
+		float x;
+		float y;
+	};
+
+	/// <summary>
+	/// A few SDL_Colors to use.
+	/// </summary>
+	SDL_Color COLOR_RED = { 255, 0, 0, 255 }, COLOR_GREEN = { 0, 255, 0, 255 }, COLOR_BLUE = { 0, 0, 255, 255 };
+
+	/// <summary>
 	/// The main class that games should create an instance of.
 	/// </summary>
 	class Engine
@@ -64,6 +111,12 @@ namespace CrispyOctoSpork
 		/// <returns>Returns a boolean.</returns>
 		virtual bool OnDestroy();
 
+		/// <summary>
+		/// Adds an <see cref="Entity"/> to the engines vector of entites. Will be cleaned up by the engine.
+		/// </summary>
+		/// <param name="entity">The entity pointer to add to the vector.</param>
+		void AddEntity(Entity* entity);
+
 	protected:
 		SDL_Window* window;
 		SDL_Renderer* renderer;
@@ -73,23 +126,65 @@ namespace CrispyOctoSpork
 		bool isFullscreenEnabled;
 		std::string name;
 		bool isEngineRunning;
+		std::vector <Entity*> entities;
 
 		/// <summary>
-		/// The main update function that is called once per frame in the engine.
+		/// The main loop. To support emscripten the current <see cref="Engine"/> instance is passed in.
 		/// </summary>
+		/// <param name="arg">A pointer to the current <see cref="Engine"/> instance.</param>
 		static void Update(void* arg);
 	};
 
+	/// <summary>
+	/// An object for holding texture information and to perform basic renders of it.
+	/// </summary>
 	class Texture
 	{
 	public:
+		/// <summary>
+		/// Default constructor.
+		/// </summary>
 		Texture();
+
+		/// <summary>
+		/// Creates a new instance of <see cref="Texture"/>.
+		/// </summary>
 		Texture(SDL_Renderer* renderer);
+
+		/// <summary>
+		/// Default deconstructor.
+		/// </summary>
 		~Texture();
-		bool LoadTextureFromFile(SDL_Renderer* renderer, const char* filepath);
+
+		/// <summary>
+		/// Populates the <see cref="SDL_Texture"/> from a file.
+		/// </summary>
+		/// <param name="filepath">The file path to load an image from for the texture.</param>
+		/// <returns>Returns a boolean indicating success.</returns>
+		bool LoadTextureFromFile(const char* filepath);
+
+		/// <summary>
+		/// Called to cleanup and free the texture.
+		/// </summary>
 		void Free();
+
+		/// <summary>
+		/// Renders the texture to the current <see cref="SDL_Renderer"/>.
+		/// </summary>
+		/// <param name="x">The x location to draw to.</param>
+		/// <param name="y">The y location to draw to.</param>
+		/// <param name="clip">The rectangle to pull texture information from. Useful for sprite sheets.</param>
+		/// <param name="angle">The angle at which to rotate the texture.</param>
+		/// <param name="center">The center to rotate about.</param>
+		/// <param name="flip">Determines if the texture will be flipped.</param>
 		void Render(double x, double y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_FPoint* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
+
+		/// <summary>
+		/// Gets the current renderer associated with this texture.
+		/// </summary>
+		/// <returns>Returns a pointer to a <see cref="SDL_Renderer"/>.</returns>
 		SDL_Renderer* GetRenderer();
+
 	private:
 		SDL_Texture* texture;
 		SDL_Renderer* renderer;
@@ -97,21 +192,111 @@ namespace CrispyOctoSpork
 		int height;
 	};
 
-	class Entity
+	/// <summary>
+	/// Sprite class to hold an entity and a texture.
+	/// </summary>
+	class Sprite : public Entity
 	{
 	public:
-		Entity();
-		Entity(float width, float height, float x, float y, Texture* texture = NULL);
-		~Entity();
-		virtual bool OnUpdate(float deltaTime);
+		/// <summary>
+		/// Default constructor.
+		/// </summary>
+		Sprite();
+
+		/// <summary>
+		/// Creates a new instance of <see cref="Sprite"/>.
+		/// </summary>
+		/// <param name="x">The x location of the sprite in the engine.</param>
+		/// <param name="y">The y location of the sprite in the engine.</param>
+		/// <param name="width">The width of the sprite.</param>
+		/// <param name="height">The height of the sprite.</param>
+		/// <param name="texture">A pointer to the texture to use for the sprite.</param>
+		/// <param name="renderer">A pointer to the renderer to render the sprite to.</param>
+		Sprite(float x, float y, float width, float height, Texture* texture, SDL_Renderer* renderer);
+
+		/// <summary>
+		/// Called once per frame. Renders the sprite to its current location.
+		/// </summary>
+		/// <param name="deltaTime">The delta time since the last frame.</param>
+		/// <returns>Returns a boolean indicating success.</returns>
 		virtual bool OnRender(float deltaTime);
-		SDL_Rect GetRect();
-	private:
+
+	protected:
 		float width;
 		float height;
-		float x;
-		float y;
 		Texture* texture;
+		SDL_Renderer* renderer;
+
+	};
+
+	/// <summary>
+	/// Class to hold an entity represented by a rectangle.
+	/// </summary>
+	class Rectangle : public Entity
+	{
+	public:
+		/// <summary>
+		/// Default constructor.
+		/// </summary>
+		Rectangle();
+
+		/// <summary>
+		/// Creates a new instance of <see cref="Rectangle"/>.
+		/// </summary>
+		/// <param name="x">The x location of the rectangle in the engine.</param>
+		/// <param name="y">The y location of the rectangle in the engine.</param>
+		/// <param name="width">The width of the rectangle.</param>
+		/// <param name="height">The height of the rectangle.</param>
+		/// <param name="color">The color to draw the rectangle with.</param>
+		/// <param name="renderer">A pointer to the renderer to render the rectangle to.</param>
+		Rectangle(float x, float y, float width, float height, SDL_Color color, SDL_Renderer* renderer);
+
+		/// <summary>
+		/// Called once per frame. Renders the rectangle to its current location.
+		/// </summary>
+		/// <param name="deltaTime">The delta time since the last frame.</param>
+		/// <returns>Returns a boolean indicating success.</returns>
+		virtual bool OnRender(float deltaTime);
+
+	protected:
+		float width;
+		float height;
+		SDL_Color color;
+		SDL_Renderer* renderer;
+	};
+
+	/// <summary>
+	/// Class to hold an entity represented by a circle.
+	/// </summary>
+	class Circle : public Entity
+	{
+	public:
+		/// <summary>
+		/// Default constructor.
+		/// </summary>
+		Circle();
+
+		/// <summary>
+		/// Creates a new instance of <see cref="Circle"/>.
+		/// </summary>
+		/// <param name="x">The x location of the center of the circle.</param>
+		/// <param name="y">The y location of the center of the circle.</param>
+		/// <param name="radius">The radius of the circle</param>
+		/// <param name="color">The color to draw the circle with.</param>
+		/// <param name="renderer">A pointer to the renderer to render the circle to.</param>
+		Circle(float x, float y, float radius, SDL_Color color, SDL_Renderer* renderer);
+
+		/// <summary>
+		/// Called once per frame. Renders the circle to its current location.
+		/// </summary>
+		/// <param name="deltaTime">The delta time since the last frame.</param>
+		/// <returns>Returns a boolean indicating success.</returns>
+		virtual bool OnRender(float deltaTime);
+
+	protected:
+		float radius;
+		SDL_Color color;
+		SDL_Renderer* renderer;
 	};
 
 	Engine::Engine()
@@ -131,15 +316,6 @@ namespace CrispyOctoSpork
 	Engine::~Engine()
 	{}
 
-	/// <summary>
-	/// First thing to call after creating an instance of <see cref="Engine"/>.
-	/// </summary>
-	/// <param name="name">The name of the game, will be displayed in the title bar.</param>
-	/// <param name="width">The width of the screen in pixels.</param>
-	/// <param name="height">The height of the screen in pixels.</param>
-	/// <param name="vsync">Indicates if the renderer should be created with vsync on.</param>
-	/// <param name="fullscreen">Indicates if the renderer should be created with fullscreen set.</param>
-	/// <returns>Returns a boolean indicating if creation was successful.</returns>
 	bool Engine::Create(std::string name, int width, int height, bool vsync, bool fullscreen)
 	{
 		this->name = name;
@@ -193,10 +369,6 @@ namespace CrispyOctoSpork
 		return true;
 	}
 
-	/// <summary>
-	/// Called to start the main game loop.
-	/// </summary>
-	/// <returns>Returns a boolean.</returns>
 	bool Engine::Start()
 	{
 		isEngineRunning = true;
@@ -212,13 +384,12 @@ namespace CrispyOctoSpork
 		}
 		#endif
 
+		OnDestroy();
+
 		return true;
 	}
 
-	/// <summary>
-	/// The main loop. To support emscripten the current <see cref="Engine"/> instance is passed in.
-	/// </summary>
-	/// <param name="arg">A pointer to the current <see cref="Engine"/> instance.</param>
+
 	void Engine::Update(void* arg)
 	{
 		Engine* engine = (Engine*)arg;
@@ -249,24 +420,119 @@ namespace CrispyOctoSpork
 
 	bool Engine::OnUpdate(float deltaTime)
 	{
+		for (auto& entity : entities)
+		{
+			entity->OnRender(deltaTime);
+		}
+
 		return true;
 	}
 
 	bool Engine::OnDestroy()
 	{
+		for (auto p : entities)
+		{
+			delete p;
+		}
+
+		entities.clear();
 		return true;
 	}
 
-	Entity::Entity()
-	{}
+	void Engine::AddEntity(Entity* entity)
+	{
+		entities.push_back(entity);
+	}
 
-	Entity::Entity(float width, float height, float x, float y, Texture* texture)
+	Entity::Entity()
+	{
+		x = 0;
+		y = 0;
+	}
+
+	Entity::Entity(float x, float y)
+	{
+		this->x = x;
+		this->y = y;
+	}
+
+	Sprite::Sprite()
+	{
+		this->width = 0;
+		this->height = 0;
+		this->texture = NULL;
+		this->renderer = NULL;
+	}
+
+	Sprite::Sprite(float x, float y, float width, float height, Texture* texture, SDL_Renderer* renderer) : Entity(x, y)
 	{
 		this->width = width;
 		this->height = height;
-		this->x = x;
-		this->y = y;
 		this->texture = texture;
+		this->renderer = renderer;
+	}
+
+	bool Sprite::OnRender(float deltaTime)
+	{
+		texture->Render(x, y);
+
+		return true;
+	}
+
+	Rectangle::Rectangle()
+	{
+		this->width = 0;
+		this->height = 0;
+		this->color = SDL_Color{255, 255, 255, 255};
+		this->renderer = NULL;
+	}
+
+	Rectangle::Rectangle(float x, float y, float width, float height, SDL_Color color, SDL_Renderer* renderer) : Entity(x, y)
+	{
+		this->width = width;
+		this->height = height;
+		this->color = color;
+		this->renderer = renderer;
+	}
+
+	bool Rectangle::OnRender(float deltaTime)
+	{
+		SDL_SetRenderDrawColor(renderer, color.r, color.b, color.g, color.a);
+		SDL_FRect rect = { x, y, width, height };
+		SDL_RenderFillRectF(renderer, &rect);
+		return false;
+	}
+
+	Circle::Circle()
+	{
+		this->radius = 0;
+		this->color = SDL_Color{ 255, 255, 255, 255 };
+		this->renderer = NULL;
+	}
+
+	Circle::Circle(float x, float y, float radius, SDL_Color color, SDL_Renderer* renderer) : Entity(x, y)
+	{
+		this->radius = radius;
+		this->color = color;
+		this->renderer = renderer;
+	}
+
+	bool Circle::OnRender(float deltaTime)
+	{
+		SDL_SetRenderDrawColor(renderer, color.r, color.b, color.g, color.a);
+		for (int w = 0; w < radius * 2; w++)
+		{
+			for (int h = 0; h < radius * 2; h++)
+			{
+				int dx = radius - w; // horizontal offset
+				int dy = radius - h; // vertical offset
+				if ((dx * dx + dy * dy) <= (radius * radius))
+				{
+					SDL_RenderDrawPoint(renderer, x + dx, y + dy);
+				}
+			}
+		}
+		return false;
 	}
 
 	Entity::~Entity()
@@ -278,26 +544,17 @@ namespace CrispyOctoSpork
 		return true;
 	}
 
-	bool Entity::OnRender(float deltaTime)
-	{
-		if (texture != NULL)
-		{
-			texture->Render(x, y);
-		}
-
-		return true;
-	}
-
-	SDL_Rect Entity::GetRect()
-	{
-		SDL_Rect rect = { x, y, width, height };
-		return rect;
-	}
+	 bool Entity::OnRender(float deltaTime)
+	 {
+		 return true;
+	 }
 
 	Texture::Texture()
 	{
 		this->texture = NULL;
 		this->renderer = NULL;
+		this->width = 0;
+		this->height = 0;
 	}
 
 	Texture::Texture(SDL_Renderer* renderer)
@@ -313,7 +570,7 @@ namespace CrispyOctoSpork
 		Free();
 	}
 
-	bool Texture::LoadTextureFromFile(SDL_Renderer* renderer, const char* filepath)
+	bool Texture::LoadTextureFromFile(const char* filepath)
 	{
 		Free();
 

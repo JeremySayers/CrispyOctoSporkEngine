@@ -1,39 +1,59 @@
 #include "crispyOctoSporkEngine.h"
 using namespace CrispyOctoSpork;
 
-class Player : public Entity
-{
-public:
-	Player(float width, float height, float x, float y, Texture* texture) : Entity(width, height, x, y, texture) {}
-};
-
+/// <summary>
+/// Sample game. Derivies from the base CrispyOctoSpork::Engine.
+/// </summary>
 class SampleGame : public Engine
 {
 public:
+	/// <summary>
+	/// Example texture to use with a sprite.
+	/// </summary>
+	Texture texture;
+
+	/// <summary>
+	/// OnCreate gets called once at the begining of the program once SDL has been initilized.
+	/// Use this for loading textures, entities, etc.
+	/// </summary>
+	/// <returns>Returns a boolean indicating success.</returns>
 	bool OnCreate() override
 	{
-		playerTexture = Texture(renderer);
-		playerTexture.LoadTextureFromFile(renderer, "assets/ball.png");
-		player =  Player(32, 32, screenWidth / 2 - 32, screenHeight / 2 - 32, &playerTexture);
+		texture = Texture(renderer);
+		texture.LoadTextureFromFile("assets/ball.png");
+
+		AddEntity(new Sprite(screenWidth / 2 - 32 - 64, screenHeight / 2 - 32, 32, 32, &texture, renderer));
+		AddEntity(new Circle(screenWidth / 2 - 16, screenHeight / 2 - 16, 16, COLOR_BLUE, renderer));
+		AddEntity(new Rectangle(screenWidth / 2 + 32, screenHeight / 2 - 32, 32, 32, COLOR_GREEN, renderer));
+
 		return true;
 	}
 
+	/// <summary>
+	/// Called once per frame. If you want the engine to render entities that have
+	/// added then you need to call Engine::OnUpdate(deltaTime).
+	/// </summary>
+	/// <param name="deltaTime">The delta time since the last frame. 
+	/// Useful for frame independant movement.</param>
+	/// <returns>Returns a boolean indicating success.</returns>
 	bool OnUpdate(float deltaTime) override
 	{
-		player.OnUpdate(deltaTime);
-		player.OnRender(deltaTime);
-
+		Engine::OnUpdate(deltaTime);
 		return true;
 	}
-private:
-	Entity player;
-	Texture playerTexture;
 };
 
+/// <summary>
+/// The main entry point of your game.
+/// </summary>
+/// <param name="argc">The number of arguments.</param>
+/// <param name="argv">A char array of arguments provided.</param>
+/// <returns>Returns an integer indicating exit status.</returns>
 int main(int argc, char* argv[])
 {
 	SampleGame game;
 
+	// Create a new instance of your game. If successful, then start the main loop.
 	if (game.Create("SampleGame", 1280, 720, true, false))
 	{
 		game.Start();
