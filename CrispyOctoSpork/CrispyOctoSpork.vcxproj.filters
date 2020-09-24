@@ -14,32 +14,17 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="SampleGame">
-      <UniqueIdentifier>{b81ffb93-17b1-468b-9cc4-e72c3db2b91d}</UniqueIdentifier>
+      <UniqueIdentifier>{8cde8204-56fa-475d-b2d1-e6cb4b8fd364}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\game.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="sample\main.cpp">
-      <Filter>SampleGame</Filter>
-    </ClCompile>
-    <ClCompile Include="sample\sampleScene.cpp">
-      <Filter>SampleGame</Filter>
-    </ClCompile>
+    <ClInclude Include="crispyOctoSporkEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\entity.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\game.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\scene.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sample\sampleScene.h">
-      <Filter>SampleGame</Filter>
-    </ClInclude>
+    <ClCompile Include="sampleGame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
