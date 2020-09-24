@@ -360,6 +360,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-*.html
+index.html
 *.js
 *.wasm
