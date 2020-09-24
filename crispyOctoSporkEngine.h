@@ -72,10 +72,25 @@ namespace CrispyOctoSpork
 		bool isVsyncEnabled;
 		bool isFullscreenEnabled;
 		std::string name;
+		bool isEngineRunning;
+
+		/// <summary>
+		/// The main update function that is called once per frame in the engine.
+		/// </summary>
+		void Update(void* arg);
 	};
 
 	Engine::Engine()
-	{}
+	{
+		window = NULL;
+		renderer = NULL;
+		int screenWidth = 0;
+		int screenHeight = 0;
+		bool isVsyncEnabled = true;
+		bool isFullscreenEnabled = false;
+		std::string name = "";
+		bool isEngineRunning = false;
+	}
 
 	Engine::~Engine()
 	{}
@@ -96,9 +111,6 @@ namespace CrispyOctoSpork
 		this->screenHeight = height;
 		this->isVsyncEnabled = vsync;
 		this->isFullscreenEnabled = fullscreen;
-
-		this->window = NULL;
-		this->renderer = NULL;
 
 		Uint32 windowFlags = SDL_WINDOW_SHOWN;
 
@@ -142,19 +154,59 @@ namespace CrispyOctoSpork
 			return false;
 		}
 	}
-	inline bool Engine::Start()
+
+	/// <summary>
+	/// Called to start the main game loop.
+	/// </summary>
+	/// <returns>Returns a boolean.</returns>
+	bool Engine::Start()
+	{
+		isEngineRunning = true;
+
+		#ifdef __EMSCRIPTEN__
+		emscripten_set_main_loop_arg(Engine::Update, this, -1, 1);
+		#else
+		while (isEngineRunning)
+		{
+			Update(this);
+		}
+		#endif
+
+		return true;
+	}
+
+	void Engine::Update(void* arg)
+	{
+		class Engine* engine = (class Engine*)arg;
+
+		SDL_Event event;
+		while (SDL_PollEvent(&event))
+		{
+			switch (event.type)
+			{
+			case SDL_QUIT:
+				engine->isEngineRunning = false;
+				break;
+			}
+		}
+
+		SDL_SetRenderDrawColor(engine->renderer, 135, 206, 235, 255);
+		SDL_RenderClear(engine->renderer);
+
+		SDL_RenderPresent(engine->renderer);
+	}
+
+	bool Engine::OnCreate()
 	{
 		return true;
 	}
-	inline bool Engine::OnCreate()
+
+	bool Engine::OnUpdate(float deltaTime)
 	{
 		return true;
 	}
-	inline bool Engine::OnUpdate(float deltaTime)
-	{
-		return true;
-	}
-	inline bool Engine::OnDestroy()
+
+	bool Engine::OnDestroy()
 	{
 		return true;
 	}
