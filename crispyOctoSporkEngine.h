@@ -60,6 +60,35 @@ namespace CrispyOctoSpork
 	SDL_Color COLOR_RED = { 255, 0, 0, 255 }, COLOR_GREEN = { 0, 255, 0, 255 }, COLOR_BLUE = { 0, 0, 255, 255 };
 
 	/// <summary>
+	/// Class for calculating and storing the current frame rate.
+	/// </summary>
+	class FrameRate
+	{
+	public:
+		/// <summary>
+		/// Default constructor.
+		/// </summary>
+		FrameRate();
+
+		/// <summary>
+		/// Gets the current frame rate.
+		/// </summary>
+		/// <returns>Returns an int indicating the number of frames that occurd in the last second.</returns>
+		int GetCurrentFramesPerSecond();
+
+		/// <summary>
+		/// Called once per frame in order to update the frame rate.
+		/// </summary>
+		/// <returns>Returns 0 or the current framerate if there is an update (once per second.)</returns>
+		int OnUpdate();
+
+	private:
+		Uint32 timeStampOfBeginingOfSecond;
+		int currentSecondsFrameCount;
+		int currentFramesPerSecond;
+	};
+
+	/// <summary>
 	/// The main class that games should create an instance of.
 	/// </summary>
 	class Engine
@@ -127,6 +156,7 @@ namespace CrispyOctoSpork
 		std::string name;
 		bool isEngineRunning;
 		std::vector <Entity*> entities;
+		FrameRate frameRate;
 
 		/// <summary>
 		/// The main loop. To support emscripten the current <see cref="Engine"/> instance is passed in.
@@ -409,8 +439,13 @@ namespace CrispyOctoSpork
 		SDL_RenderClear(engine->renderer);
 
 		engine->OnUpdate(1.0);
-
 		SDL_RenderPresent(engine->renderer);
+
+		if (engine->frameRate.OnUpdate() != 0.0)
+		{
+			std::string newWindowTitle = engine->name + " - " + std::to_string(engine->frameRate.GetCurrentFramesPerSecond()) + " FPS";
+			SDL_SetWindowTitle(engine->window, newWindowTitle.c_str());
+		}
 	}
 
 	bool Engine::OnCreate()
@@ -442,6 +477,35 @@ namespace CrispyOctoSpork
 	void Engine::AddEntity(Entity* entity)
 	{
 		entities.push_back(entity);
+	}
+
+	FrameRate::FrameRate()
+	{
+		timeStampOfBeginingOfSecond = SDL_GetTicks();
+		currentFramesPerSecond = 0.0;
+		currentSecondsFrameCount = 0;
+	}
+
+	int FrameRate::GetCurrentFramesPerSecond()
+	{
+		return currentFramesPerSecond;
+	}
+
+	int FrameRate::OnUpdate() 
+	{
+		Uint32 currentFrameTime = SDL_GetTicks();
+
+		if (currentFrameTime - timeStampOfBeginingOfSecond >= 1000.0)
+		{
+			currentSecondsFrameCount++;
+			currentFramesPerSecond = currentSecondsFrameCount;
+			currentSecondsFrameCount = 0;
+			timeStampOfBeginingOfSecond = currentFrameTime;
+			return currentFramesPerSecond;
+		}
+
+		currentSecondsFrameCount++;
+		return 0;
 	}
 
 	Entity::Entity()
@@ -539,15 +603,15 @@ namespace CrispyOctoSpork
 	{
 	}
 
-	 bool Entity::OnUpdate(float deltaTime)
+	bool Entity::OnUpdate(float deltaTime)
 	{
 		return true;
 	}
 
-	 bool Entity::OnRender(float deltaTime)
-	 {
-		 return true;
-	 }
+	bool Entity::OnRender(float deltaTime)
+	{
+		return true;
+	}
 
 	Texture::Texture()
 	{

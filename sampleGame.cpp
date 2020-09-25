@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 	SampleGame game;
 
 	// Create a new instance of your game. If successful, then start the main loop.
-	if (game.Create("SampleGame", 1280, 720, true, false))
+	if (game.Create("SampleGame", 640, 480, true, false))
 	{
 		game.Start();
 	}
