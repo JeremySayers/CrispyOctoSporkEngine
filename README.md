@@ -2,6 +2,9 @@
 
 ## What is it?
 Simple game engine written in c++ that abstracts some SDL functionality, along with adding support for common game engine needs.
+Below shows a sceenshot of the sample game that renders entites as textures, circles, and rectangles. Along with the basic particle system.
+
+![Screenshot](https://github.com/JeremySayers/CrispyOctoSporkEngine/blob/master/image.png?raw=true)
 
 ## Basic Setup
 To use with VS 2019, you'll need to download the `crispyOctoSporkEngine.h` header file and add it to your project.
