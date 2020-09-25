@@ -363,3 +363,4 @@ FodyWeavers.xsd
 index.html
 *.js
 *.wasm
+/index.data

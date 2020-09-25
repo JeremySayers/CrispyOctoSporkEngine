@@ -16,10 +16,16 @@
     <Filter Include="SampleGame">
       <UniqueIdentifier>{8cde8204-56fa-475d-b2d1-e6cb4b8fd364}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SDLUI">
+      <UniqueIdentifier>{6e86ee30-293a-4a0d-b6ea-41375366e28c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\crispyOctoSporkEngine.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sdlui\sdlui.h">
+      <Filter>SDLUI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

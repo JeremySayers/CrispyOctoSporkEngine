@@ -135,6 +135,8 @@ namespace CrispyOctoSpork
 		/// <returns>Returns a boolean indicating if the engine should continue running.</returns>
 		virtual bool OnUpdate(float deltaTime);
 
+		virtual bool OnEvent(SDL_Event event);
+
 		/// <summary>
 		/// Called before the engine terminates.
 		/// </summary>
@@ -346,12 +348,12 @@ namespace CrispyOctoSpork
 	/// </summary>
 	struct Particle
 	{
-		float x;
-		float y;
-		float xVelocity;
-		float yVelocity;
-		float totalLifeTime;
-		float lifeTimeRemaining;
+		float x = 0;
+		float y = 0;
+		float xVelocity = 0;
+		float yVelocity = 0;
+		float totalLifeTime = 0;
+		float lifeTimeRemaining = 0;
 		bool active = false;
 	};
 
@@ -359,9 +361,14 @@ namespace CrispyOctoSpork
 	{
 	public:
 		ParticleEmitter();
-		ParticleEmitter(float x, float y, float lifeInSeconds, Texture* texture, float speed = 0.5, float startSizeMultiplier = 1.0, float endSizeMultiplier = 0.0, int maxParticles = 10000);
+		~ParticleEmitter();
+		ParticleEmitter(float x, float y, float lifeInSeconds, Texture* texture, float speed = 0.5, int newParticlesPerSecond = 5, float startSizeMultiplier = 1.0, float endSizeMultiplier = 0.0, int maxParticles = 20000);
 		void OnUpdate(float deltaTime);
 		void OnRender();
+		bool active;
+		int newParticlesPerSecond;
+		float startOfSecond;
+		float particlesCreatedThisSecond;
 	private:
 		float x;
 		float y;
@@ -370,7 +377,7 @@ namespace CrispyOctoSpork
 		float startSizeMultiplier = 1.0;
 		float endSizeMultiplier = 1.0;
 		float speed;
-		std::vector<Particle> particlePool;
+		Particle* particlePool;
 		int currentParticlePoolIndex = 0;
 		int maxParticles;
 	};
@@ -479,6 +486,8 @@ namespace CrispyOctoSpork
 				engine->isEngineRunning = false;
 				break;
 			}
+
+			engine->OnEvent(event);
 		}
 
 		Uint32 currentFrameTime = SDL_GetTicks();
@@ -511,6 +520,11 @@ namespace CrispyOctoSpork
 			entity->OnRender(deltaTime);
 		}
 
+		return true;
+	}
+
+	bool Engine::OnEvent(SDL_Event event)
+	{
 		return true;
 	}
 
@@ -754,9 +768,29 @@ namespace CrispyOctoSpork
 
 	ParticleEmitter::ParticleEmitter()
 	{
+		this->x = 0;
+		this->y = 0;
+		this->lifeInMiliseconds = 0;
+		this->speed = 0;
+		this->texture = NULL;
+		this->startSizeMultiplier = 0;
+		this->endSizeMultiplier = 0;
+		this->maxParticles = 0;
+		this->currentParticlePoolIndex = 0;
+		this->newParticlesPerSecond = 0;
+		this->startOfSecond = 0;
+		this->particlesCreatedThisSecond = 0;
+		this->active = false;
+		this->maxParticles = 0;
+		this->particlePool = NULL;
 	}
 
-	ParticleEmitter::ParticleEmitter(float x, float y, float lifeInMiliseconds, Texture* texture, float speed, float startSizeMultiplier, float endSizeMultiplier, int maxParticles)
+	ParticleEmitter::~ParticleEmitter()
+	{
+		delete[] this->particlePool;
+	}
+
+	ParticleEmitter::ParticleEmitter(float x, float y, float lifeInMiliseconds, Texture* texture, float speed, int newParticlesPerSecond, float startSizeMultiplier, float endSizeMultiplier, int maxParticles)
 	{
 		this->x = x;
 		this->y = y;
@@ -767,31 +801,50 @@ namespace CrispyOctoSpork
 		this->endSizeMultiplier = endSizeMultiplier;
 		this->maxParticles = maxParticles;
 		this->currentParticlePoolIndex = 0;
-
-		particlePool.resize(maxParticles);
+		this->newParticlesPerSecond = newParticlesPerSecond;
+		this->startOfSecond = SDL_GetTicks();
+		this->particlesCreatedThisSecond = 0;
+		this->active = true;
+		this->particlePool = new Particle[maxParticles];
 	}
 
 	void ParticleEmitter::OnUpdate(float deltaTime)
 	{
-		// first create some new particles
-		int newParticlesPerUpdate = 10;
-		for (int i = 0; i < newParticlesPerUpdate; i++)
+		if (!active)
 		{
-			Particle* particle = &particlePool[currentParticlePoolIndex];
-			particle->active = true;
-			particle->lifeTimeRemaining = lifeInMiliseconds;
-			particle->totalLifeTime = lifeInMiliseconds;
-			particle->x = x;
-			particle->y = y;
-			particle->xVelocity = -1.0 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1.0 - -1.0)));
-			particle->yVelocity = -0.1 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (-1.0 - -0.1)));
-
-			currentParticlePoolIndex++;
-			if (currentParticlePoolIndex > maxParticles - 1)
-			{
-				currentParticlePoolIndex = 0;
-			}
+			return;
 		}
+
+		// first get the amount of time since the begining of the second
+		// and determine if we've created enough particles at this point yet.
+		float currentTime = SDL_GetTicks();
+
+		float elapsedTimeInSecond = currentTime - startOfSecond;
+		int particlesThatShouldHaveBeenCreatedThisSecond = (elapsedTimeInSecond * newParticlesPerSecond) / 1000;
+
+		if (particlesThatShouldHaveBeenCreatedThisSecond > particlesCreatedThisSecond)
+		{
+			int particlesToCreate = particlesThatShouldHaveBeenCreatedThisSecond - particlesCreatedThisSecond;
+			for (int i = 0; i < particlesToCreate; i++)
+			{
+				Particle* particle = &particlePool[currentParticlePoolIndex];
+				particle->active = true;
+				particle->lifeTimeRemaining = lifeInMiliseconds;
+				particle->totalLifeTime = lifeInMiliseconds;
+				particle->x = x;
+				particle->y = y;
+				particle->xVelocity = -1.0 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1.0 - -1.0)));
+				particle->yVelocity = -1.0 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1.0 - -1.0)));//-0.1 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (-1.0 - -0.1)));
+
+				currentParticlePoolIndex++;
+				if (currentParticlePoolIndex > maxParticles - 2)
+				{
+					currentParticlePoolIndex = 0;
+				}
+
+				particlesCreatedThisSecond++;
+			}
+		}		
 
 		// next let's update the particles
 		for (int i = 0; i < maxParticles; i++)
