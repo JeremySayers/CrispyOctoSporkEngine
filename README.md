@@ -1,6 +1,4 @@
 # CrispyOctoSporkEngine
-
-## What is it?
 Simple game engine written in c++ that abstracts some SDL functionality, along with adding support for common game engine needs.
 Below shows a sceenshot of the sample game that renders entites as textures, circles, and rectangles. Along with the basic particle system.
 
