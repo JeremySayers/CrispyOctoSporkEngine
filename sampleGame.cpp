@@ -12,6 +12,9 @@ public:
 	/// </summary>
 	Texture texture;
 
+	Texture particleTexture;
+	ParticleEmitter particleEmitter;
+
 	/// <summary>
 	/// OnCreate gets called once at the begining of the program once SDL has been initilized.
 	/// Use this for loading textures, entities, etc.
@@ -20,11 +23,15 @@ public:
 	bool OnCreate() override
 	{
 		texture = Texture(renderer);
+		particleTexture = Texture(renderer);
 		texture.LoadTextureFromFile("assets/ball.png");
+		particleTexture.LoadTextureFromFile("assets/particle.png");
 
-		AddEntity(new Sprite(screenWidth / 2 - 32 - 64, screenHeight / 2 - 32, 32, 32, &texture, renderer));
-		AddEntity(new Circle(screenWidth / 2 - 16, screenHeight / 2 - 16, 16, COLOR_BLUE, renderer));
-		AddEntity(new Rectangle(screenWidth / 2 + 32, screenHeight / 2 - 32, 32, 32, COLOR_GREEN, renderer));
+		AddEntity(new Sprite(screenWidth / 2 - 32 - 64, screenHeight / 2 + 64, 32, 32, &texture, renderer));
+		AddEntity(new Circle(screenWidth / 2 - 16, screenHeight / 2 + 80, 16, COLOR_BLUE, renderer));
+		AddEntity(new Rectangle(screenWidth / 2 + 32, screenHeight / 2 + 64, 32, 32, COLOR_GREEN, renderer));
+
+		particleEmitter = ParticleEmitter((float) (screenWidth / 2 - 16), (float) (screenHeight / 2 + 32), 800, &particleTexture, 0.3);
 
 		return true;
 	}
@@ -39,6 +46,7 @@ public:
 	bool OnUpdate(float deltaTime) override
 	{
 		Engine::OnUpdate(deltaTime);
+		particleEmitter.OnUpdate(deltaTime);
 		return true;
 	}
 };
@@ -54,7 +62,7 @@ int main(int argc, char* argv[])
 	SampleGame game;
 
 	// Create a new instance of your game. If successful, then start the main loop.
-	if (game.Create("SampleGame", 640, 480, true, false))
+	if (game.Create("SampleGame", 640, 480, false, false))
 	{
 		game.Start();
 	}

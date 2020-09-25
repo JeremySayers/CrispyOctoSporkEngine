@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <math.h>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -146,6 +147,16 @@ namespace CrispyOctoSpork
 		/// <param name="entity">The entity pointer to add to the vector.</param>
 		void AddEntity(Entity* entity);
 
+		/// <summary>
+		/// Draws a qaud with an optional rotation.
+		/// Realized this is kinda useless right now since SDL doesn't have a way
+		/// to actually fill in the geometry with a color.
+		/// </summary>
+		/// <param name="points">The array of points to draw.</param>
+		/// <param name="color">The color to make the quad</param>
+		/// <param name="rotation">The angle to rotate the quad in radians.</param>
+		void DrawQuad(SDL_FPoint* points, SDL_Color color, float rotation = 0.0);
+
 	protected:
 		SDL_Window* window;
 		SDL_Renderer* renderer;
@@ -156,6 +167,7 @@ namespace CrispyOctoSpork
 		std::string name;
 		bool isEngineRunning;
 		std::vector <Entity*> entities;
+		float lastFrameTime;
 		FrameRate frameRate;
 
 		/// <summary>
@@ -207,7 +219,7 @@ namespace CrispyOctoSpork
 		/// <param name="angle">The angle at which to rotate the texture.</param>
 		/// <param name="center">The center to rotate about.</param>
 		/// <param name="flip">Determines if the texture will be flipped.</param>
-		void Render(double x, double y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_FPoint* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
+		void Render(double x, double y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_FPoint* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE, int alpha = 255);
 
 		/// <summary>
 		/// Gets the current renderer associated with this texture.
@@ -329,6 +341,40 @@ namespace CrispyOctoSpork
 		SDL_Renderer* renderer;
 	};
 
+	/// <summary>
+	/// Struct used to contain a single particle of a <see cref="ParticleEmitter"/>.
+	/// </summary>
+	struct Particle
+	{
+		float x;
+		float y;
+		float xVelocity;
+		float yVelocity;
+		float totalLifeTime;
+		float lifeTimeRemaining;
+		bool active = false;
+	};
+
+	class ParticleEmitter
+	{
+	public:
+		ParticleEmitter();
+		ParticleEmitter(float x, float y, float lifeInSeconds, Texture* texture, float speed = 0.5, float startSizeMultiplier = 1.0, float endSizeMultiplier = 0.0, int maxParticles = 10000);
+		void OnUpdate(float deltaTime);
+		void OnRender();
+	private:
+		float x;
+		float y;
+		float lifeInMiliseconds;
+		Texture* texture;
+		float startSizeMultiplier = 1.0;
+		float endSizeMultiplier = 1.0;
+		float speed;
+		std::vector<Particle> particlePool;
+		int currentParticlePoolIndex = 0;
+		int maxParticles;
+	};
+
 	Engine::Engine()
 	{
 		SDL_Init(SDL_INIT_VIDEO);
@@ -433,23 +479,28 @@ namespace CrispyOctoSpork
 				engine->isEngineRunning = false;
 				break;
 			}
-		}		
+		}
+
+		Uint32 currentFrameTime = SDL_GetTicks();
+		float deltaTime = currentFrameTime - engine->lastFrameTime;
+		engine->lastFrameTime = currentFrameTime;
 
 		SDL_SetRenderDrawColor(engine->renderer, 135, 206, 235, 255);
 		SDL_RenderClear(engine->renderer);
 
-		engine->OnUpdate(1.0);
+		engine->OnUpdate(deltaTime);
 		SDL_RenderPresent(engine->renderer);
 
 		if (engine->frameRate.OnUpdate() != 0.0)
 		{
-			std::string newWindowTitle = engine->name + " - " + std::to_string(engine->frameRate.GetCurrentFramesPerSecond()) + " FPS";
+			std::string newWindowTitle = engine->name + " - " + std::to_string(engine->frameRate.GetCurrentFramesPerSecond()) + " FPS - " + std::to_string(deltaTime);
 			SDL_SetWindowTitle(engine->window, newWindowTitle.c_str());
 		}
 	}
 
 	bool Engine::OnCreate()
 	{
+		lastFrameTime = SDL_GetTicks();
 		return true;
 	}
 
@@ -477,6 +528,28 @@ namespace CrispyOctoSpork
 	void Engine::AddEntity(Entity* entity)
 	{
 		entities.push_back(entity);
+	}
+
+	void Engine::DrawQuad(SDL_FPoint* points, SDL_Color color, float rotation)
+	{
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+
+		// if we have a rotation then let's apply the rotation matrix.
+		if (rotation == 0.0)
+		{
+			SDL_RenderDrawLinesF(renderer, points, 4);
+			return;
+		}
+
+		SDL_FPoint rotatedPoints[4];
+
+		for (int i = 0; i < 3; i++)
+		{
+			rotatedPoints[i].x = (points[i].x * std::cos(rotation)) - (points[i].y * std::sin(rotation));
+			rotatedPoints[i].y = (points[i].x * std::sin(rotation)) + (points[i].y * std::cos(rotation));
+		}
+
+		SDL_RenderDrawLinesF(renderer, rotatedPoints, 4);
 	}
 
 	FrameRate::FrameRate()
@@ -661,7 +734,7 @@ namespace CrispyOctoSpork
 		}
 	}
 
-	void Texture::Render(double x, double y, SDL_Rect* clip, double angle, SDL_FPoint* center, SDL_RendererFlip flip)
+	void Texture::Render(double x, double y, SDL_Rect* clip, double angle, SDL_FPoint* center, SDL_RendererFlip flip, int alpha)
 	{
 		SDL_FRect renderQuad = { x, y, width, height };
 
@@ -671,10 +744,90 @@ namespace CrispyOctoSpork
 			renderQuad.h = clip->h;
 		}
 
+		SDL_SetTextureAlphaMod(texture, alpha);
 		SDL_RenderCopyExF(renderer, texture, clip, &renderQuad, angle, center, flip);
 	}
 	SDL_Renderer* Texture::GetRenderer()
 	{
 		return renderer;
+	}
+
+	ParticleEmitter::ParticleEmitter()
+	{
+	}
+
+	ParticleEmitter::ParticleEmitter(float x, float y, float lifeInMiliseconds, Texture* texture, float speed, float startSizeMultiplier, float endSizeMultiplier, int maxParticles)
+	{
+		this->x = x;
+		this->y = y;
+		this->lifeInMiliseconds = lifeInMiliseconds;
+		this->speed = speed;
+		this->texture = texture;
+		this->startSizeMultiplier = startSizeMultiplier;
+		this->endSizeMultiplier = endSizeMultiplier;
+		this->maxParticles = maxParticles;
+		this->currentParticlePoolIndex = 0;
+
+		particlePool.resize(maxParticles);
+	}
+
+	void ParticleEmitter::OnUpdate(float deltaTime)
+	{
+		// first create some new particles
+		int newParticlesPerUpdate = 10;
+		for (int i = 0; i < newParticlesPerUpdate; i++)
+		{
+			Particle* particle = &particlePool[currentParticlePoolIndex];
+			particle->active = true;
+			particle->lifeTimeRemaining = lifeInMiliseconds;
+			particle->totalLifeTime = lifeInMiliseconds;
+			particle->x = x;
+			particle->y = y;
+			particle->xVelocity = -1.0 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (1.0 - -1.0)));
+			particle->yVelocity = -0.1 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (-1.0 - -0.1)));
+
+			currentParticlePoolIndex++;
+			if (currentParticlePoolIndex > maxParticles - 1)
+			{
+				currentParticlePoolIndex = 0;
+			}
+		}
+
+		// next let's update the particles
+		for (int i = 0; i < maxParticles; i++)
+		{
+			Particle* particle = &particlePool[i];
+
+			if (particle->active) 
+			{
+				particle->lifeTimeRemaining -= deltaTime;
+
+				if (particle->lifeTimeRemaining <= 0.0)
+				{
+					particle->active = false;
+					continue;
+				}
+
+				particle->x += particle->xVelocity * speed * deltaTime;
+				particle->y += particle->yVelocity * speed * deltaTime;
+			}
+		}
+
+		OnRender();
+	}
+	void ParticleEmitter::OnRender()
+	{
+		for (int i = 0; i < maxParticles; i++)
+		{
+			Particle* particle = &particlePool[i];
+
+			if (particle->active) 
+			{
+				int cross = particle->lifeTimeRemaining * 255;
+				int alpha = cross / particle->totalLifeTime;
+
+				texture->Render(particle->x, particle->y, NULL, 0.0, NULL, SDL_FLIP_NONE, alpha);
+			}			
+		}
 	}
 }
