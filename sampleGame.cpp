@@ -24,8 +24,8 @@ public:
 	{
 		texture = Texture(renderer);
 		particleTexture = Texture(renderer);
-		texture.LoadTextureFromFile("assets/ball.png");
-		particleTexture.LoadTextureFromFile("assets/particle.png");
+		texture.LoadTextureFromFile("../assets/ball.png");
+		particleTexture.LoadTextureFromFile("../assets/particle.png");
 
 		AddEntity(new Sprite(screenWidth / 2 - 32 - 64, screenHeight / 2 + 64, 32, 32, &texture, renderer));
 		AddEntity(new Circle(screenWidth / 2 - 16, screenHeight / 2 + 80, 16, COLOR_BLUE, renderer));

@@ -219,7 +219,7 @@ namespace CrispyOctoSpork
 		/// <param name="angle">The angle at which to rotate the texture.</param>
 		/// <param name="center">The center to rotate about.</param>
 		/// <param name="flip">Determines if the texture will be flipped.</param>
-		void Render(double x, double y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_FPoint* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE, int alpha = 255);
+		void Render(float x, float y, SDL_Rect* clip = NULL, float angle = 0.0, SDL_FPoint* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE, int alpha = 255);
 
 		/// <summary>
 		/// Gets the current renderer associated with this texture.
@@ -545,8 +545,8 @@ namespace CrispyOctoSpork
 
 		for (int i = 0; i < 3; i++)
 		{
-			rotatedPoints[i].x = (points[i].x * std::cos(rotation)) - (points[i].y * std::sin(rotation));
-			rotatedPoints[i].y = (points[i].x * std::sin(rotation)) + (points[i].y * std::cos(rotation));
+			rotatedPoints[i].x = (points[i].x * cosf(rotation)) - (points[i].y * sinf(rotation));
+			rotatedPoints[i].y = (points[i].x * sinf(rotation)) + (points[i].y * cosf(rotation));
 		}
 
 		SDL_RenderDrawLinesF(renderer, rotatedPoints, 4);
@@ -734,9 +734,9 @@ namespace CrispyOctoSpork
 		}
 	}
 
-	void Texture::Render(double x, double y, SDL_Rect* clip, double angle, SDL_FPoint* center, SDL_RendererFlip flip, int alpha)
+	void Texture::Render(float x, float y, SDL_Rect* clip, float angle, SDL_FPoint* center, SDL_RendererFlip flip, int alpha)
 	{
-		SDL_FRect renderQuad = { x, y, width, height };
+		SDL_FRect renderQuad = { x, y, (float) width, (float) height };
 
 		if (clip != NULL)
 		{
