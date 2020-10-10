@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_mixer.h>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -135,6 +136,13 @@ namespace CrispyOctoSpork
 		/// <returns>Returns a boolean indicating if the engine should continue running.</returns>
 		virtual bool OnUpdate(float deltaTime);
 
+		/// <summary>
+		/// Called once per frame after update to render stuff
+		/// </summary>
+		/// <param name="deltaTime">The time delta from the previous frame.</param>
+		/// <returns>Returns a boolean indicating if the engine should continue running.</returns>
+		virtual bool OnRender(float deltaTime);
+
 		virtual bool OnEvent(SDL_Event event);
 
 		/// <summary>
@@ -177,6 +185,18 @@ namespace CrispyOctoSpork
 		/// </summary>
 		/// <param name="arg">A pointer to the current <see cref="Engine"/> instance.</param>
 		static void Update(void* arg);
+	};
+
+	class SoundEffect
+	{
+	public:
+		SoundEffect();
+		~SoundEffect();
+		bool LoadSoundFromFile(const char* filepath);
+		bool PlaySound();
+		void Free();
+	private:
+		Mix_Chunk* mixChunk;
 	};
 
 	/// <summary>
@@ -414,14 +434,14 @@ namespace CrispyOctoSpork
 			windowFlags |= SDL_WINDOW_FULLSCREEN;
 		}
 
-		this->window = SDL_CreateWindow(this->name.c_str(), 
-										SDL_WINDOWPOS_UNDEFINED, 
-										SDL_WINDOWPOS_UNDEFINED, 
-										this->screenWidth, 
-										this->screenHeight, 
-										windowFlags);
+		this->window = SDL_CreateWindow(this->name.c_str(),
+			SDL_WINDOWPOS_UNDEFINED,
+			SDL_WINDOWPOS_UNDEFINED,
+			this->screenWidth,
+			this->screenHeight,
+			windowFlags);
 
-		if (this->window == NULL) 
+		if (this->window == NULL)
 		{
 			std::cout << "Failed to create window: " << SDL_GetError() << std::endl;
 			return false;
@@ -449,6 +469,12 @@ namespace CrispyOctoSpork
 			return false;
 		}
 
+		if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+		{
+			std::cout << "Failed to start the mixer: " << Mix_GetError() << std::endl;
+			return false;
+		}
+
 		return true;
 	}
 
@@ -458,17 +484,18 @@ namespace CrispyOctoSpork
 
 		this->OnCreate();
 
-		#ifdef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
 		emscripten_set_main_loop_arg(Engine::Update, this, -1, 1);
-		#else
+#else
 		while (isEngineRunning)
 		{
 			Update(this);
 		}
-		#endif
+#endif
 
 		OnDestroy();
-
+		SDL_Quit();
+		IMG_Quit();
 		return true;
 	}
 
@@ -514,6 +541,11 @@ namespace CrispyOctoSpork
 	}
 
 	bool Engine::OnUpdate(float deltaTime)
+	{
+		return true;
+	}
+
+	bool Engine::OnRender(float deltaTime)
 	{
 		for (auto& entity : entities)
 		{
@@ -578,7 +610,7 @@ namespace CrispyOctoSpork
 		return currentFramesPerSecond;
 	}
 
-	int FrameRate::OnUpdate() 
+	int FrameRate::OnUpdate()
 	{
 		Uint32 currentFrameTime = SDL_GetTicks();
 
@@ -634,7 +666,7 @@ namespace CrispyOctoSpork
 	{
 		this->width = 0;
 		this->height = 0;
-		this->color = SDL_Color{255, 255, 255, 255};
+		this->color = SDL_Color{ 255, 255, 255, 255 };
 		this->renderer = NULL;
 	}
 
@@ -700,6 +732,48 @@ namespace CrispyOctoSpork
 		return true;
 	}
 
+	SoundEffect::SoundEffect()
+	{
+		mixChunk = NULL;
+	}
+
+	SoundEffect::~SoundEffect()
+	{
+		Free();
+	}
+
+	bool SoundEffect::LoadSoundFromFile(const char* filepath)
+	{
+		mixChunk = Mix_LoadWAV(filepath);
+		if (mixChunk == NULL)
+		{
+			printf("Failed to load scratch sound effect! SDL_mixer Error: %s\n", Mix_GetError());
+			return false;
+		}
+
+		return true;
+	}
+
+	void SoundEffect::Free()
+	{
+		if (mixChunk != NULL)
+		{
+			Mix_FreeChunk(mixChunk);
+		}
+
+		mixChunk = NULL;
+	}
+
+	bool SoundEffect::PlaySound()
+	{
+		if (mixChunk == NULL)
+		{
+			return false;
+		}
+
+		Mix_PlayChannel(-1, mixChunk, 0);
+	}
+
 	Texture::Texture()
 	{
 		this->texture = NULL;
@@ -750,7 +824,7 @@ namespace CrispyOctoSpork
 
 	void Texture::Render(float x, float y, SDL_Rect* clip, float angle, SDL_FPoint* center, SDL_RendererFlip flip, int alpha)
 	{
-		SDL_FRect renderQuad = { x, y, (float) width, (float) height };
+		SDL_FRect renderQuad = { x, y, (float)width, (float)height };
 
 		if (clip != NULL)
 		{
@@ -844,14 +918,14 @@ namespace CrispyOctoSpork
 
 				particlesCreatedThisSecond++;
 			}
-		}		
+		}
 
 		// next let's update the particles
 		for (int i = 0; i < maxParticles; i++)
 		{
 			Particle* particle = &particlePool[i];
 
-			if (particle->active) 
+			if (particle->active)
 			{
 				particle->lifeTimeRemaining -= deltaTime;
 
@@ -874,13 +948,13 @@ namespace CrispyOctoSpork
 		{
 			Particle* particle = &particlePool[i];
 
-			if (particle->active) 
+			if (particle->active)
 			{
 				int cross = particle->lifeTimeRemaining * 255;
 				int alpha = cross / particle->totalLifeTime;
 
 				texture->Render(particle->x, particle->y, NULL, 0.0, NULL, SDL_FLIP_NONE, alpha);
-			}			
+			}
 		}
 	}
 }
